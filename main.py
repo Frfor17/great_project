@@ -6,9 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Any, AsyncGenerator, List
 
 # Импорты из локальных файлов
-from schemas import UserCreate, UserOut
+from schemas import UserCreate, UserOut, GoodCreate, GoodOut
 from database import SessionLocal, engine
-from models import User, Base
+from models import User, Base, Good
 
 app = FastAPI()
 
@@ -35,4 +35,19 @@ async def create_user(name: str, password: str, db: AsyncSession = Depends(get_d
 @app.get("/users/", response_model=List[UserOut])
 async def get_all_users(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User))
+    return result.scalars().all()
+
+# добавление товара
+@app.post("/goods/", response_model=GoodCreate)
+async def create_good(name:str, desc: str, db:AsyncSession = Depends(get_db)) -> Any:
+    new_good = Good(name=name, desc=desc)
+    db.add(new_good)
+    await db.commit()
+    await db.refresh(new_good)
+    return new_good
+    
+#показать все товары
+@app.get("/goods/", response_model=List[GoodOut])
+async def get_all_goods(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Good))
     return result.scalars().all()
